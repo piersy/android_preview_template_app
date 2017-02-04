@@ -9,7 +9,13 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".PreviewActivity">
+        <!--looks like the camera considers its horizontal axis to be the longest-->
+        <!--and setting the screen orientation to landscape means that the camera orientation-->
+        <!--lines up with the screen-->
+        <!--Then we remove the title bar otherwise it looks ridiculous on the side of the screen-->
+        <activity android:name=".PreviewActivity"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
