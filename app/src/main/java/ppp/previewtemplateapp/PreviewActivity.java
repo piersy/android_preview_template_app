@@ -31,7 +31,7 @@ public class PreviewActivity extends AppCompatActivity {
         SurfaceView view = (SurfaceView) findViewById(R.id.activity_preview);
         LinearLayout layout = (LinearLayout) findViewById(R.id.activity_layout);
         // Create the preview, it will take care of managing the preview display
-        preview = new Preview(view, this, getWindowManager(), layout);
+        preview = new Preview(view, this, getWindowManager());
     }
 
     @Override

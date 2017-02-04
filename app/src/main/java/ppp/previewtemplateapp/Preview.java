@@ -22,43 +22,24 @@ public class Preview implements SurfaceHolder.Callback {
     private SurfaceView previewSurface;
     private final Context context;
     private WindowManager windowManager;
-    private LinearLayout layout;
     private LinearLayout.LayoutParams lp;
 
-    public Preview(SurfaceView previewSurface, Context context, WindowManager windowManager, LinearLayout layout) {
+    public Preview(SurfaceView previewSurface, Context context, WindowManager windowManager) {
         holder = previewSurface.getHolder();
         this.previewSurface = previewSurface;
         this.context = context;
         this.windowManager = windowManager;
-        this.layout = layout;
         holder.addCallback(this);
     }
 
     private Camera camera = null;
     private final String TAG = "Preview";
 
-    private Camera openFrontFacingCameraGingerbread() {
-        int cameraCount = 0;
-        Camera cam = null;
-        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-        cameraCount = Camera.getNumberOfCameras();
-        for (int camIdx = 0; camIdx < cameraCount; camIdx++) {
-            Camera.getCameraInfo(camIdx, cameraInfo);
-            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                try {
-                    cam = Camera.open(camIdx);
-                } catch (RuntimeException e) {
-                    Log.e(TAG, "Camera failed to open: " + e.getLocalizedMessage());
-                }
-            }
-        }
 
-        return cam;
-    }
-
+    @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.d(TAG, "surfaceCreated: ");
-        camera = openFrontFacingCameraGingerbread();
+        camera = CameraUtils.openFrontFacingCamera();
     }
 
 
@@ -122,31 +103,7 @@ public class Preview implements SurfaceHolder.Callback {
         startPreview();
     }
 
-    Camera.PreviewCallback previewCallback = new Camera.PreviewCallback() {
 
-        public void onPreviewFrame(byte[] data, Camera camera) {
-            //Log.i(TAG, "onPreviewFrame: ");
-            //camera.addCallbackBuffer(data);
-//                Rect rect = new Rect(0, 0, camera.getParameters().getPreviewSize().width, camera.getParameters().getPreviewSize().height);
-//                YuvImage img = new YuvImage(data, ImageFormat.NV21, rect.width(), rect.height(), null);
-//                OutputStream outStream = null;
-//                File file = new File("preview_" + imageNum);
-//                imageNum++;
-//                try {
-//                    outStream = new FileOutputStream(file);
-//                    img.
-//                            img.compressToJpeg(rect, 100, outStream);
-//                    outStream.flush();
-//                    outStream.close();
-//                } catch (FileNotFoundException e) {
-//                    e.printStackTrace();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-        }
-
-
-    };
 
 
     //This optimal size makes sure we can display a 1:1 ratio of preview
@@ -162,8 +119,6 @@ public class Preview implements SurfaceHolder.Callback {
         int vs = Math.min(w, h);
         int vl = Math.max(w, h);
         int cs=0, cl= 0;
-
-        int targetHeight = h;
 
         // Find size
         for (Camera.Size size : params.getSupportedPreviewSizes()) {
@@ -191,31 +146,30 @@ public class Preview implements SurfaceHolder.Callback {
         return optimalSize;
     }
 
+    Camera.PreviewCallback previewCallback = new Camera.PreviewCallback() {
 
-    public void orientCamera(Camera camera, int w, int h) {
-
-        Camera.Parameters parameters = camera.getParameters();
-
-        Display display = windowManager.getDefaultDisplay();
-
-        if (display.getRotation() == Surface.ROTATION_0) {
-            parameters.setPreviewSize(h, w);
-            camera.setDisplayOrientation(90);
+        public void onPreviewFrame(byte[] data, Camera camera) {
+            //Log.i(TAG, "onPreviewFrame: ");
+            //camera.addCallbackBuffer(data);
+//                Rect rect = new Rect(0, 0, camera.getParameters().getPreviewSize().width, camera.getParameters().getPreviewSize().height);
+//                YuvImage img = new YuvImage(data, ImageFormat.NV21, rect.width(), rect.height(), null);
+//                OutputStream outStream = null;
+//                File file = new File("preview_" + imageNum);
+//                imageNum++;
+//                try {
+//                    outStream = new FileOutputStream(file);
+//                    img.
+//                            img.compressToJpeg(rect, 100, outStream);
+//                    outStream.flush();
+//                    outStream.close();
+//                } catch (FileNotFoundException e) {
+//                    e.printStackTrace();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
         }
 
-        if (display.getRotation() == Surface.ROTATION_90) {
-            parameters.setPreviewSize(w, h);
-        }
 
-        if (display.getRotation() == Surface.ROTATION_180) {
-            parameters.setPreviewSize(h, w);
-        }
+    };
 
-        if (display.getRotation() == Surface.ROTATION_270) {
-            parameters.setPreviewSize(w, h);
-            camera.setDisplayOrientation(180);
-        }
-
-        camera.setParameters(parameters);
-    }
 }
