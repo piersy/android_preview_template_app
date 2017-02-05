@@ -13,52 +13,59 @@ import android.view.WindowManager;
 class CameraUtils {
     private static final String TAG = "CameraUtils";
 
+    static class CameraAndInfo {
+        Camera camera;
+        Camera.CameraInfo info;
+    }
     /**
-     * Opens and returns the front facing camera. Returns null if there is no front
+     * Opens and returns the camera and info for the given facing. Returns null if there is no front
      * facing camera or there is a problem opening the camera.
      */
-    static Camera openFrontFacingCamera() {
+    static CameraAndInfo getCamera(int facing) {
         int cameraCount;
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         cameraCount = Camera.getNumberOfCameras();
         for (int camIdx = 0; camIdx < cameraCount; camIdx++) {
             Camera.getCameraInfo(camIdx, cameraInfo);
-            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            if (cameraInfo.facing == facing) {
                 try {
-                    return Camera.open(camIdx);
+                    CameraAndInfo cni = new CameraAndInfo();
+                    cni.camera = Camera.open(camIdx);
+                    cni.info = cameraInfo;
+                    Log.e(TAG, "Camera: " + cni.camera);
+                    return cni;
                 } catch (RuntimeException e) {
                     Log.e(TAG, "Camera failed to open: " + e.getLocalizedMessage());
                     break;
                 }
             }
         }
+        Log.e(TAG, "Returning null camera: ");
         return null;
     }
 
-    public void orientCamera(Camera camera, WindowManager windowManager, int w, int h) {
+    /**
+     * Ensures that the camera is correctly aligned with the surface that it is displaying on.
+     */
+    static void setCameraDisplayOrientation(CameraAndInfo cni, WindowManager windowManager){
 
-        Camera.Parameters parameters = camera.getParameters();
+        int rotation = windowManager.getDefaultDisplay().getRotation();
+        int degrees = 0;
 
-        Display display = windowManager.getDefaultDisplay();
-
-        if (display.getRotation() == Surface.ROTATION_0) {
-            parameters.setPreviewSize(h, w);
-            camera.setDisplayOrientation(90);
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
         }
 
-        if (display.getRotation() == Surface.ROTATION_90) {
-            parameters.setPreviewSize(w, h);
+        int result;
+        if (cni.info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (cni.info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (cni.info.orientation - degrees + 360) % 360;
         }
-
-        if (display.getRotation() == Surface.ROTATION_180) {
-            parameters.setPreviewSize(h, w);
-        }
-
-        if (display.getRotation() == Surface.ROTATION_270) {
-            parameters.setPreviewSize(w, h);
-            camera.setDisplayOrientation(180);
-        }
-
-        camera.setParameters(parameters);
+        cni.camera.setDisplayOrientation(result);
     }
 }
