@@ -32,7 +32,6 @@ class CameraUtils {
                     CameraAndInfo cni = new CameraAndInfo();
                     cni.camera = Camera.open(camIdx);
                     cni.info = cameraInfo;
-                    Log.e(TAG, "Camera: " + cni.camera);
                     return cni;
                 } catch (RuntimeException e) {
                     Log.e(TAG, "Camera failed to open: " + e.getLocalizedMessage());
@@ -53,19 +52,29 @@ class CameraUtils {
         int degrees = 0;
 
         switch (rotation) {
-            case Surface.ROTATION_0: degrees = 0; break;
-            case Surface.ROTATION_90: degrees = 90; break;
-            case Surface.ROTATION_180: degrees = 180; break;
-            case Surface.ROTATION_270: degrees = 270; break;
+            case Surface.ROTATION_0: degrees = 0;
+                Log.e(TAG, "Surface rotation is 0");
+                break;
+            case Surface.ROTATION_90: degrees = 90;
+                Log.e(TAG, "Surface rotation is 90");
+                break;
+            case Surface.ROTATION_180: degrees = 180;
+                Log.e(TAG, "Surface rotation is 180");
+                break;
+            case Surface.ROTATION_270: degrees = 270;
+                Log.e(TAG, "Surface rotation is 270");
+                break;
         }
 
         int result;
+        Log.e(TAG, "Camera orientation is "+cni.info.orientation);
         if (cni.info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             result = (cni.info.orientation + degrees) % 360;
             result = (360 - result) % 360;  // compensate the mirror
         } else {  // back-facing
             result = (cni.info.orientation - degrees + 360) % 360;
         }
+        Log.e(TAG, "Setting camera display orientation "+result);
         cni.camera.setDisplayOrientation(result);
     }
 }

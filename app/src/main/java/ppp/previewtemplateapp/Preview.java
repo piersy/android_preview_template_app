@@ -10,6 +10,10 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import static ppp.previewtemplateapp.CameraUtils.*;
 
 /**
@@ -43,10 +47,12 @@ public class Preview implements SurfaceHolder.Callback {
         CameraAndInfo cni = CameraUtils.getCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         camera = cni.camera;
         if (camera == null) return;
-        Log.d(TAG, "camera is not null: ");
+        Log.d(TAG, "camera is not null, rotation "+cni.info.orientation);
         // Camera is always oriented in landscape but this app is fixed in portrait so we
         // rotate through 90 to fix this.
-       camera.setDisplayOrientation(90);
+        CameraUtils.setCameraDisplayOrientation(cni,windowManager);
+      // camera.setDisplayOrientation(90);
+        Log.d(TAG, "camera is not null, rotation "+cni.info.orientation);
     }
 
 
@@ -68,20 +74,22 @@ public class Preview implements SurfaceHolder.Callback {
         if (size == null) return;
         params.setPreviewSize(size.width, size.height);
         camera.setParameters(params);
-        Log.e(TAG, "SurfaceWidth:" + width);
-        Log.e(TAG, "SurfaceHeight:" + height);
-        Log.e(TAG, "PreviewWidth:" + size.width);
-        Log.e(TAG, "PreviewHeight:" + size.height);
-        // Add padding to fix the aspect ratio of the preview.
-        if(height != size.width) {
-            Log.e(TAG, "padding");
 
-            //Now padd the surface view so that the preview is in 1:1 ratio
+        // Add padding to fix the aspect ratio of the preview. The height of the view needs to be
+        // compared with the width of the preview since the camera is in landscape mode. We avoid
+        // adjusting the layout if the view height matches that of the preview, since that triggers
+        // surfaceChanged again and we get stuck in a loop with undefined behaviour.
+        if(height != size.width) {
+            //Now pad the surface view so that the preview is in 1:1 ratio
             lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            // We set the top margin here to squash the preview into shape.
+            // Subtract the height (width because the camera is in landscape) of the preview from the
+            // height of the view to find the amount to pad by.
             lp.setMargins(0,height - size.width , 0, 0);
             previewSurface.setLayoutParams(lp);
         }
 
+        // Construct a buffer for capturing preview data.
         int bufferSize = ImageFormat.getBitsPerPixel(ImageFormat.NV21) * size.width * size.height / 8;
         camera.setPreviewCallbackWithBuffer(previewCallback);
         camera.addCallbackBuffer(new byte[bufferSize]);
@@ -127,9 +135,6 @@ public class Preview implements SurfaceHolder.Callback {
         startPreview();
     }
 
-
-
-
     //This optimal size makes sure we can display a 1:1 ratio of preview
     //pixels to view pixels. It does this by finding a preview with a small
     //dimension equal to the view's small dimension with the preview large dimension
@@ -156,7 +161,8 @@ public class Preview implements SurfaceHolder.Callback {
           //  Log.e(TAG, "cl:" + cl);
 
             if (cs == vs && cl <= vl) {
-              //  Log.e(TAG, "size:" + size);
+               Log.e(TAG, "size: w " + size.height +" w " +size.width);
+
                return size;
             }
 
@@ -167,6 +173,14 @@ public class Preview implements SurfaceHolder.Callback {
     Camera.PreviewCallback previewCallback = new Camera.PreviewCallback() {
 
         public void onPreviewFrame(byte[] data, Camera camera) {
+            Log.e(TAG, context.getExternalFilesDir(null)+"/preview_0.yuv");
+            File file = new File(context.getExternalFilesDir(null)+"/preview_0.yuv");
+            try {
+                file.createNewFile();
+                new FileOutputStream(file).write(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             //Log.i(TAG, "onPreviewFrame: ");
             //cameraAndInfo.addCallbackBuffer(data);
 //                Rect rect = new Rect(0, 0, camera.getParameters().getPreviewSize().width, camera.getParameters().getPreviewSize().height);
